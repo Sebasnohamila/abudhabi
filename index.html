@@ -17,18 +17,19 @@
         #splash-screen img { max-width: 60%; height: auto; }
         .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
 
-        /* Estilo para el video en pantalla completa con ROTACIÓN */
+        /* Estilo corregido para rotación de 90 grados */
         #fullScreenVideo {
             display: none; 
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 50%;
+            left: 50%;
+            /* Al rotar 90 grados, intercambiamos el ancho por el alto visualmente */
+            width: 100vh; 
+            height: 100vw;
             object-fit: cover;
             z-index: 1;
-            /* Invertimos el video 180 grados */
-            transform: rotate(180deg);
+            /* Centramos y rotamos */
+            transform: translate(-50%, -50%) rotate(90deg);
         }
 
         .a-canvas {
@@ -50,7 +51,7 @@
                 }.bind(this));
 
                 marker.addEventListener('markerLost', function () {
-                    // Se mantiene visible aunque se pierda el marcador temporalmente
+                    // Se mantiene visible
                 }.bind(this));
             },
         });
@@ -64,7 +65,7 @@
 <body style="margin: 0; overflow: hidden;">
     <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
 
-    <video id="fullScreenVideo" src="assets/asset.mp4" loop playsinline webkit-playsinline></video>
+    <video id="fullScreenVideo" src="assets/asset.mp4" loop playsinline webkit-playsinline muted></video>
 
     <a-scene
         vr-mode-ui="enabled: false"
