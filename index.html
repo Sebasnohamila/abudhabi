@@ -21,44 +21,24 @@
         <script>
             AFRAME.registerComponent('videohandler', {
                 init: function () {
-                    var marker = this.el;
+                    this.marker = this.el;
                     this.vid = document.querySelector("#vid");
                     this.model = document.querySelector("#animatedModel"); 
-                    this.vibrationTimer = null; // Variable para controlar el bucle de vibración
 
-                    // Función para vibrar aleatoriamente
-                    this.startRandomVibration = function() {
-                        if (!this.toggle) return;
-
-                        // Genera una duración de vibración entre 50ms y 200ms
-                        const duration = Math.floor(Math.random() * 150) + 50;
-                        navigator.vibrate(duration);
-
-                        // Genera un intervalo para la próxima vibración (entre 500ms y 2000ms)
-                        const nextVibe = Math.floor(Math.random() * 1500) + 500;
-                        
-                        this.vibrationTimer = setTimeout(() => {
-                            this.startRandomVibration();
-                        }, nextVibe);
-                    };
-
-                    marker.addEventListener('markerFound', function () {
-                        this.toggle = true;
-                        this.vid.play();
-                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 1');
-                        
-                        // Iniciar el ciclo de vibración
-                        this.startRandomVibration();
+                    this.marker.addEventListener('markerFound', function () {
+                        if (this.vid) this.vid.play();
+                        // Forzamos el play de la animación al encontrar el marcador
+                        if (this.model) {
+                            this.model.setAttribute('animation-mixer', {clip: '*', loop: 'repeat', timeScale: 1});
+                        }
                     }.bind(this));
 
-                    marker.addEventListener('markerLost', function () {
-                        this.toggle = false;
-                        this.vid.pause();
-                        if (this.model) this.model.setAttribute('animation-mixer', 'timeScale: 0');
-                        
-                        // Detener vibración y limpiar timer
-                        clearTimeout(this.vibrationTimer);
-                        navigator.vibrate(0); // Detiene cualquier vibración actual
+                    this.marker.addEventListener('markerLost', function () {
+                        if (this.vid) this.vid.pause();
+                        // Opcional: pausar la animación al perder el marcador
+                        if (this.model) {
+                            this.model.setAttribute('animation-mixer', {timeScale: 0});
+                        }
                     }.bind(this));
                 },
             });
@@ -85,7 +65,6 @@
             window.addEventListener('arjs-video-loaded', function(e) {
                 setTimeout(() => { document.body.classList.add('arjs-ready'); }, 1000);
             });
-            setTimeout(() => { document.body.classList.add('arjs-ready'); }, 15000);
         </script>
     </head>
 
@@ -96,20 +75,20 @@
             vr-mode-ui="enabled: false"
             loading-screen="enabled: false;"
             arjs='sourceType: webcam; debugUIEnabled: false;'
-            renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;" 
+            renderer="logarithmicDepthBuffer: true; colorManagement: true;" 
             id="scene" embedded gesture-detector
         >
             <a-assets>
-                <video id="vid" src="assets/asset.mp4" preload="auto" response-type="arraybuffer" loop crossorigin webkit-playsinline autoplay playsinline></video>
+                <video id="vid" src="assets/asset.mp4" preload="auto" loop crossorigin webkit-playsinline autoplay playsinline></video>
                 <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
             </a-assets>
 
             <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
-            <a-entity light="type: directional; intensity: 1.5; castShadow: false;" position="2 4 4"></a-entity>
+            <a-entity light="type: directional; intensity: 1.5;" position="2 4 4"></a-entity>
 
             <a-marker
                 type="pattern" preset="custom" url="assets/marker.patt"
-                videohandler smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5"
+                videohandler smooth="true" smoothCount="10"
                 raycaster="objects: .clickable" emitevents="true"
                 cursor="fuse: false; rayOrigin: mouse;" id="markerA"
             >
@@ -133,11 +112,11 @@
                         scale="0.01 0.01 0.01"
                         position="0 0 0" 
                         rotation="-90 0 0"
-                        animation-mixer="loop: repeat" 
+                        animation-mixer="clip: *; loop: repeat; timeScale: 1" 
                     ></a-entity>
                 </a-entity>
-
             </a-marker>
+            
             <a-entity camera></a-entity>
         </a-scene>
     </body>
