@@ -17,7 +17,7 @@
         #splash-screen img { max-width: 60%; height: auto; }
         .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
 
-        /* Estilo para el video en pantalla completa */
+        /* Estilo para el video en pantalla completa con ROTACIÓN */
         #fullScreenVideo {
             display: none; 
             position: fixed;
@@ -25,11 +25,12 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            object-fit: cover; /* Asegura que cubra toda la pantalla sin deformarse */
-            z-index: 1; /* Por encima de la cámara web, debajo del modelo 3D */
+            object-fit: cover;
+            z-index: 1;
+            /* Invertimos el video 180 grados */
+            transform: rotate(180deg);
         }
 
-        /* Asegura que el contenido 3D esté sobre el video */
         .a-canvas {
             z-index: 2 !important;
         }
@@ -49,10 +50,7 @@
                 }.bind(this));
 
                 marker.addEventListener('markerLost', function () {
-                    // Si quieres que el video se quite al perder el marcador, descomenta estas líneas:
-                    // this.vid.pause();
-                    // this.vid.style.display = 'none';
-                    // this.modelContainer.setAttribute('visible', 'false');
+                    // Se mantiene visible aunque se pierda el marcador temporalmente
                 }.bind(this));
             },
         });
@@ -82,23 +80,19 @@
         <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
         <a-entity light="type: directional; intensity: 1.5;" position="2 4 4"></a-entity>
 
-        <a-marker
-            type="pattern" preset="custom" url="assets/marker.patt"
-            videohandler id="markerA"
-        >
-        </a-marker>
+        <a-marker type="pattern" preset="custom" url="assets/marker.patt" videohandler id="markerA"></a-marker>
 
         <a-entity camera>
             <a-entity id="gui-container" visible="false" position="0 0 -2">
                 <a-entity 
                     id="rotation-container"
                     class="clickable"
-                    gesture-handler="minScale: 0.25; maxScale: 10; rotationFactor: 1;"
+                    gesture-handler="minScale: 0.1; maxScale: 5; rotationFactor: 1;"
                 >
                     <a-entity
                         id="animatedModel"
                         gltf-model="#miModelo"
-                        scale="0.1 0.1 0.1" 
+                        scale="0.05 0.05 0.05" 
                         position="0 0 0" 
                         rotation="0 0 0"
                         animation-mixer="loop: repeat" 
