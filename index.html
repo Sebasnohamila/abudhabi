@@ -11,7 +11,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: black; /* Filos negros */
+            background-color: black;
         }
 
         #splash-screen {
@@ -23,8 +23,7 @@
         #splash-screen img { max-width: 60%; height: auto; }
         .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
 
-        /* --- CAMBIO 1: SIMPLIFICACIÓN DEL VIDEO --- */
-        /* Eliminamos rotaciones forzadas. Dejamos que ocupe la pantalla de forma natural */
+        /* --- VIDEO FULL SCREEN ABSOLUTO --- */
         #fullScreenVideo {
             display: none;
             position: fixed;
@@ -32,58 +31,38 @@
             left: 0;
             width: 100%;
             height: 100%;
-            /* 'contain' asegura que se vea entero, rellenando con negro si es necesario */
-            object-fit: contain;
-            z-index: 1;
-            background-color: black;
+            
+            /* 'cover': El video hará zoom para llenar toda la pantalla. 
+               No habrá bordes negros, pero se recortará un poco la imagen si las proporciones no coinciden. */
+            object-fit: cover;
+            
+            /* Z-index muy alto para tapar la cámara y el modelo 3D */
+            z-index: 20000; 
         }
 
-        .a-canvas {
-            z-index: 2 !important;
+        /* Opcional: Ocultar el botón de VR que pone A-Frame a veces */
+        .a-enter-vr-button {
+            display: none;
         }
     </style>
 
     <script>
-        // Componente existente para manejar el video al encontrar el marker
         AFRAME.registerComponent('videohandler', {
             init: function () {
                 var marker = this.el;
                 this.vid = document.querySelector("#fullScreenVideo");
-                this.modelContainer = document.querySelector("#gui-container");
 
                 marker.addEventListener('markerFound', function () {
                     this.vid.style.display = 'block';
+                    // Reproducimos el video (debe estar muted para autoplay seguro)
                     this.vid.play().catch(e => console.log("Error play:", e));
-                    this.modelContainer.setAttribute('visible', 'true');
                 }.bind(this));
 
                 marker.addEventListener('markerLost', function () {
-                   // Opcional: this.vid.pause();
+                    // Si quieres que el video desaparezca al perder el marker, descomenta la linea de abajo:
+                    // this.vid.style.display = 'none';
                 }.bind(this));
             },
-        });
-
-        // --- CAMBIO 2: NUEVO COMPONENTE PARA TRANSPARENCIA ---
-        AFRAME.registerComponent('model-transparency', {
-            schema: { default: 0.5 }, // Valor de opacidad por defecto (0.0 a 1.0)
-            init: function () {
-                // Esperamos a que el modelo GLB termine de cargar
-                this.el.addEventListener('model-loaded', this.updateOpacity.bind(this));
-            },
-            updateOpacity: function () {
-                const mesh = this.el.getObject3D('mesh');
-                if (!mesh) return;
-                // Recorremos todos los materiales dentro del modelo 3D
-                mesh.traverse((node) => {
-                    if (node.isMesh) {
-                        // Activamos la transparencia y asignamos el valor
-                        node.material.transparent = true;
-                        node.material.opacity = this.data;
-                        // 'depthWrite: false' ayuda a que la transparencia se vea mejor en 3D complejo
-                        node.material.depthWrite = false; 
-                    }
-                });
-            }
         });
 
         window.addEventListener('arjs-video-loaded', function(e) {
@@ -112,30 +91,7 @@
         renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
         id="scene" embedded gesture-detector
     >
-        <a-assets>
-            <a-asset-item id="miModelo" src="assets/mi-modelo.glb"></a-asset-item>
-        </a-assets>
-
-        <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
-        <a-entity light="type: directional; intensity: 1.5;" position="2 4 4"></a-entity>
-
         <a-marker type="pattern" preset="custom" url="assets/marker.patt" videohandler id="markerA">
-            <a-entity id="gui-container" visible="false">
-                <a-entity
-                    id="rotation-container"
-                    class="clickable"
-                    gesture-handler="minScale: 0.1; maxScale: 5; rotationFactor: 1;"
-                >
-                    <a-entity
-                        id="animatedModel"
-                        gltf-model="#miModelo"
-                        scale="0.002875 0.002875 0.002875"
-                        rotation="0 90 0"
-                        animation-mixer="loop: repeat"
-                        model-transparency="0.5"
-                    ></a-entity>
-                </a-entity>
-            </a-entity>
         </a-marker>
 
         <a-entity camera></a-entity>
