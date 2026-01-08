@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
     <style>
-        /* IMPORTANTE: Fondo negro para que los filos del video sean negros */
+        /* Fondo negro para los bordes */
         body {
             margin: 0;
             overflow: hidden;
@@ -24,24 +24,29 @@
         #splash-screen img { max-width: 60%; height: auto; }
         .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
 
-        /* Estilo para el video */
+        /* --- CORRECCIÓN DE ORIENTACIÓN DEL VIDEO --- */
         #fullScreenVideo {
             display: none; 
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
             
-            /* CAMBIO 1: 'contain' asegura que se vea todo el video.
-               Si sobra espacio, se verá el fondo negro (filos negros) */
+            /* Centramos el elemento en la pantalla */
+            top: 50%;
+            left: 50%;
+            
+            /* INTERCAMBIAMOS LAS DIMENSIONES:
+               El ancho del video será el ALTO de la pantalla (100vh)
+               El alto del video será el ANCHO de la pantalla (100vw) */
+            width: 100vh;
+            height: 100vw;
+            
+            /* Rotamos 90 grados y corregimos la posición del centro */
+            transform: translate(-50%, -50%) rotate(90deg);
+            
+            /* 'contain' asegura que se vea todo el video sin recortar.
+               Los espacios sobrantes se verán negros por el fondo del body */
             object-fit: contain;
             
             z-index: 1;
-            
-            /* Se eliminó rotate(180deg) para dejarlo normal. 
-               Si necesitas rotarlo 90 grados, usa: transform: rotate(90deg); */
-            transform: none; 
         }
 
         .a-canvas {
@@ -58,12 +63,16 @@
 
                 marker.addEventListener('markerFound', function () {
                     this.vid.style.display = 'block';
-                    this.vid.play();
+                    // Intentamos reproducir. Al tener 'muted' funcionará mejor.
+                    this.vid.play().catch(function(error) {
+                        console.log("Error reproduciendo video:", error);
+                    });
                     this.modelContainer.setAttribute('visible', 'true');
                 }.bind(this));
 
                 marker.addEventListener('markerLost', function () {
-                    // Se mantiene visible aunque se pierda el marcador temporalmente
+                    // Opcional: pausar si se pierde el marcador
+                    // this.vid.pause(); 
                 }.bind(this));
             },
         });
@@ -77,7 +86,15 @@
 <body>
     <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
 
-    <video id="fullScreenVideo" src="assets/asset.mp4" loop playsinline webkit-playsinline></video>
+    <video 
+        id="fullScreenVideo" 
+        src="assets/asset.mp4" 
+        loop 
+        playsinline 
+        webkit-playsinline 
+        muted 
+        crossorigin="anonymous">
+    </video>
 
     <a-scene
         vr-mode-ui="enabled: false"
