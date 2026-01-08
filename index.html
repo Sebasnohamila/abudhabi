@@ -8,11 +8,10 @@
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
     <style>
-        /* Fondo negro obligatorio para los filos */
         body {
             margin: 0;
             overflow: hidden;
-            background-color: black;
+            background-color: black; /* Filos negros */
         }
 
         #splash-screen {
@@ -24,24 +23,19 @@
         #splash-screen img { max-width: 60%; height: auto; }
         .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
 
-        /* --- VIDEO BLOQUEADO EN MODO LANDSCAPE --- */
+        /* --- CAMBIO 1: SIMPLIFICACIÓN DEL VIDEO --- */
+        /* Eliminamos rotaciones forzadas. Dejamos que ocupe la pantalla de forma natural */
         #fullScreenVideo {
-            display: none; 
+            display: none;
             position: fixed;
-            top: 50%;
-            left: 50%;
-            
-            /* Forzamos que el ANCHO del video sea el ALTO de la pantalla */
-            width: 100vh;
-            height: 100vw;
-            
-            /* Rotamos 90 grados SIEMPRE. 
-               Esto hace que aunque gires el celular, el video siga "pegado" 
-               a la orientación física del teléfono. */
-            transform: translate(-50%, -50%) rotate(90deg);
-            
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* 'contain' asegura que se vea entero, rellenando con negro si es necesario */
             object-fit: contain;
             z-index: 1;
+            background-color: black;
         }
 
         .a-canvas {
@@ -50,24 +44,46 @@
     </style>
 
     <script>
+        // Componente existente para manejar el video al encontrar el marker
         AFRAME.registerComponent('videohandler', {
             init: function () {
                 var marker = this.el;
                 this.vid = document.querySelector("#fullScreenVideo");
-                this.modelContainer = document.querySelector("#gui-container"); 
+                this.modelContainer = document.querySelector("#gui-container");
 
                 marker.addEventListener('markerFound', function () {
                     this.vid.style.display = 'block';
-                    this.vid.play().catch(function(error) {
-                        console.log("Error reproduciendo video:", error);
-                    });
+                    this.vid.play().catch(e => console.log("Error play:", e));
                     this.modelContainer.setAttribute('visible', 'true');
                 }.bind(this));
 
                 marker.addEventListener('markerLost', function () {
-                    // Opcional: pausar si se pierde el marcador
+                   // Opcional: this.vid.pause();
                 }.bind(this));
             },
+        });
+
+        // --- CAMBIO 2: NUEVO COMPONENTE PARA TRANSPARENCIA ---
+        AFRAME.registerComponent('model-transparency', {
+            schema: { default: 0.5 }, // Valor de opacidad por defecto (0.0 a 1.0)
+            init: function () {
+                // Esperamos a que el modelo GLB termine de cargar
+                this.el.addEventListener('model-loaded', this.updateOpacity.bind(this));
+            },
+            updateOpacity: function () {
+                const mesh = this.el.getObject3D('mesh');
+                if (!mesh) return;
+                // Recorremos todos los materiales dentro del modelo 3D
+                mesh.traverse((node) => {
+                    if (node.isMesh) {
+                        // Activamos la transparencia y asignamos el valor
+                        node.material.transparent = true;
+                        node.material.opacity = this.data;
+                        // 'depthWrite: false' ayuda a que la transparencia se vea mejor en 3D complejo
+                        node.material.depthWrite = false; 
+                    }
+                });
+            }
         });
 
         window.addEventListener('arjs-video-loaded', function(e) {
@@ -79,13 +95,13 @@
 <body>
     <div id="splash-screen"><img src="assets/logo.png" alt="Cargando..."></div>
 
-    <video 
-        id="fullScreenVideo" 
-        src="assets/asset.mp4" 
-        loop 
-        playsinline 
-        webkit-playsinline 
-        muted 
+    <video
+        id="fullScreenVideo"
+        src="assets/asset.mp4"
+        loop
+        playsinline
+        webkit-playsinline
+        muted
         crossorigin="anonymous">
     </video>
 
@@ -93,7 +109,7 @@
         vr-mode-ui="enabled: false"
         loading-screen="enabled: false;"
         arjs='sourceType: webcam; debugUIEnabled: false;'
-        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;" 
+        renderer="logarithmicDepthBuffer: true; colorManagement: true; sortObjects: true;"
         id="scene" embedded gesture-detector
     >
         <a-assets>
@@ -105,7 +121,7 @@
 
         <a-marker type="pattern" preset="custom" url="assets/marker.patt" videohandler id="markerA">
             <a-entity id="gui-container" visible="false">
-                <a-entity 
+                <a-entity
                     id="rotation-container"
                     class="clickable"
                     gesture-handler="minScale: 0.1; maxScale: 5; rotationFactor: 1;"
@@ -113,15 +129,15 @@
                     <a-entity
                         id="animatedModel"
                         gltf-model="#miModelo"
-                        scale="0.0025 0.0025 0.0025" 
-                        position="0 0 0" 
+                        scale="0.002875 0.002875 0.002875"
                         rotation="0 90 0"
-                        animation-mixer="loop: repeat" 
+                        animation-mixer="loop: repeat"
+                        model-transparency="0.5"
                     ></a-entity>
                 </a-entity>
             </a-entity>
         </a-marker>
-        
+
         <a-entity camera></a-entity>
     </a-scene>
 </body>
