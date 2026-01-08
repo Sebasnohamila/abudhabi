@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 
     <style>
-        /* Fondo negro para los bordes */
+        /* Fondo negro obligatorio para los filos */
         body {
             margin: 0;
             overflow: hidden;
@@ -24,28 +24,23 @@
         #splash-screen img { max-width: 60%; height: auto; }
         .arjs-ready #splash-screen { opacity: 0; pointer-events: none; }
 
-        /* --- CORRECCIÓN DE ORIENTACIÓN DEL VIDEO --- */
+        /* --- VIDEO BLOQUEADO EN MODO LANDSCAPE --- */
         #fullScreenVideo {
             display: none; 
             position: fixed;
-            
-            /* Centramos el elemento en la pantalla */
             top: 50%;
             left: 50%;
             
-            /* INTERCAMBIAMOS LAS DIMENSIONES:
-               El ancho del video será el ALTO de la pantalla (100vh)
-               El alto del video será el ANCHO de la pantalla (100vw) */
+            /* Forzamos que el ANCHO del video sea el ALTO de la pantalla */
             width: 100vh;
             height: 100vw;
             
-            /* Rotamos 90 grados y corregimos la posición del centro */
+            /* Rotamos 90 grados SIEMPRE. 
+               Esto hace que aunque gires el celular, el video siga "pegado" 
+               a la orientación física del teléfono. */
             transform: translate(-50%, -50%) rotate(90deg);
             
-            /* 'contain' asegura que se vea todo el video sin recortar.
-               Los espacios sobrantes se verán negros por el fondo del body */
             object-fit: contain;
-            
             z-index: 1;
         }
 
@@ -63,7 +58,6 @@
 
                 marker.addEventListener('markerFound', function () {
                     this.vid.style.display = 'block';
-                    // Intentamos reproducir. Al tener 'muted' funcionará mejor.
                     this.vid.play().catch(function(error) {
                         console.log("Error reproduciendo video:", error);
                     });
@@ -72,7 +66,6 @@
 
                 marker.addEventListener('markerLost', function () {
                     // Opcional: pausar si se pierde el marcador
-                    // this.vid.pause(); 
                 }.bind(this));
             },
         });
@@ -110,10 +103,8 @@
         <a-entity light="type: ambient; intensity: 1; color: #ffffff"></a-entity>
         <a-entity light="type: directional; intensity: 1.5;" position="2 4 4"></a-entity>
 
-        <a-marker type="pattern" preset="custom" url="assets/marker.patt" videohandler id="markerA"></a-marker>
-
-        <a-entity camera>
-            <a-entity id="gui-container" visible="false" position="0 0 -2">
+        <a-marker type="pattern" preset="custom" url="assets/marker.patt" videohandler id="markerA">
+            <a-entity id="gui-container" visible="false">
                 <a-entity 
                     id="rotation-container"
                     class="clickable"
@@ -122,14 +113,16 @@
                     <a-entity
                         id="animatedModel"
                         gltf-model="#miModelo"
-                        scale="0.005 0.005 0.005" 
+                        scale="0.0025 0.0025 0.0025" 
                         position="0 0 0" 
-                        rotation="0 0 0"
+                        rotation="0 90 0"
                         animation-mixer="loop: repeat" 
                     ></a-entity>
                 </a-entity>
             </a-entity>
-        </a-entity>
+        </a-marker>
+        
+        <a-entity camera></a-entity>
     </a-scene>
 </body>
 </html>
